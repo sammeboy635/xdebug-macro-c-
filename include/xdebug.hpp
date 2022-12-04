@@ -2,28 +2,48 @@
 #define XDEBUG_H
 
 #include <iostream>
-
-    /* Set your own std::ostream& STD_OUT */
-    #ifndef XDEBUG_STD_OUT 
-        std::ostream& STD_OUT = std::cout;
-    #else
-        extern std::ostream& STD_OUT;
-    #endif
+#include <thread>
+#include <map>
+#include <mutex>
 
     #if defined XDEBUG
+        /* Set your own std::ostream& XDEBUG_STD_OUT */
+        #ifndef XDEBUG_STD_OUT 
+            #define XDEBUG_STD_OUT std::cout //defualt std::cout
+        #endif
+
+        /* __THREAD__ default is std::this_thread::get_id()*/
+        #ifndef __THREAD__
+            #define __THREAD__ std::this_thread::get_id()
+        #endif
+        static std::mutex _mutexPrint;
+        static int _thread_id = 1;
+        static std::map<std::thread::id, int> _threads{{__THREAD__, 0}};
+
+        /* Each new thread that calls this get a new ID and it return the threads ID */
+        #define __THREADID__ [&]{ \
+            if(_threads.find(__THREAD__) == _threads.end()){ \
+                _threads[__THREAD__] = _thread_id; \
+                return _thread_id++; \
+            }else {return _threads[__THREAD__];}}
+
         /* debug print just for comments */
-        #define DEBUG(...) [](const auto&...x){STD_OUT << "Debug : ";((STD_OUT << x),...); STD_OUT << std::endl; }(__VA_ARGS__);
+        #define DEBUG(...) [](const auto&...x){XDEBUG_STD_OUT << "Debug : ";((XDEBUG_STD_OUT << x),...); XDEBUG_STD_OUT << std::endl; }(__VA_ARGS__);
+        /* debug print for threading purposes */
+        #define DEBUGT(...) [](const auto&...x){std::lock_guard<std::mutex> guard(_mutexPrint); XDEBUG_STD_OUT << "DebugThread " << __THREADID__() << " : ";((XDEBUG_STD_OUT << x),...); XDEBUG_STD_OUT << std::endl; }(__VA_ARGS__);
         /* trace value outputs __FILE__ __LINE__ and variables names and variable values*/
-        #define TRACEV(...) [](const auto&...x){ STD_OUT << __FILE__<<":"<<__LINE__<<" : " << __FUNCTION__ <<" ||"; char c='='; STD_OUT <<#__VA_ARGS__ << ", "; STD_OUT << "= "; ((STD_OUT << x <<", "),...); STD_OUT << std::endl; }(__VA_ARGS__);
+        #define TRACEV(...) [](const auto&...x){XDEBUG_STD_OUT << __FILE__<<":"<<__LINE__<<" : " << __FUNCTION__ <<" ||"; XDEBUG_STD_OUT <<#__VA_ARGS__ << ", "; XDEBUG_STD_OUT << "= "; ((XDEBUG_STD_OUT << x <<", "),...); XDEBUG_STD_OUT << std::endl; }(__VA_ARGS__);
         /* trace outputs __FILE__ __LINE__ and variable values*/
-        #define TRACE(...) [](const auto&...x){ STD_OUT << __FILE__<<":"<<__LINE__<<" : " << __FUNCTION__ <<" |";(( STD_OUT <<"|" << x ), ...); STD_OUT << std::endl; }(__VA_ARGS__);
+        #define TRACE(...) [](const auto&...x){ XDEBUG_STD_OUT << __FILE__<<":"<<__LINE__<<" : " << __FUNCTION__ <<" |";(( XDEBUG_STD_OUT <<"|" << x ), ...); XDEBUG_STD_OUT << std::endl; }(__VA_ARGS__);
     #else
         /* off debug statement */
-        #define DEBUG(...) return 0
+        #define DEBUG(...)
+        /* off debug statement */
+        #define DEBUGT(...) 
         /* off trace statement */
-        #define TRACEV(...) return 0
+        #define TRACEV(...)
         /* off trace statement */
-        #define TRACE(...) return 0
+        #define TRACE(...)
     #endif
 
 #endif
