@@ -5,6 +5,9 @@
 #include <thread>
 #include <map>
 #include <mutex>
+#include <chrono>
+#include <utility>
+#include <functional>
 
     #if defined XDEBUG
         /* Set your own std::ostream& XDEBUG_STD_OUT */
@@ -26,6 +29,16 @@
                 _threads[__THREAD__] = _thread_id; \
                 return _thread_id++; \
             }else {return _threads[__THREAD__];}}
+
+        /* Timing Wrapper function which excutes the function that is passed in*/
+        #define EXECUTE(func, ...) [&]{ \
+            auto start = std::chrono::high_resolution_clock::now(); \
+            auto ret = func(__VA_ARGS__); \
+            auto end = std::chrono::high_resolution_clock::now(); \
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start); \
+            XDEBUG_STD_OUT << "Duration in mircoseconds : " << duration.count() << std::endl; \
+            return ret; \
+        }()
 
         /* debug print just for comments */
         #define DEBUG(...) [](const auto&...x){XDEBUG_STD_OUT << "Debug : ";((XDEBUG_STD_OUT << x),...); XDEBUG_STD_OUT << std::endl; }(__VA_ARGS__);
