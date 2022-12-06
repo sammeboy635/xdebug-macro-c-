@@ -12,13 +12,14 @@
     #if defined XDEBUG
         /* Set your own std::ostream& XDEBUG_STD_OUT */
         #ifndef XDEBUG_STD_OUT 
-            #define XDEBUG_STD_OUT std::cout //defualt std::cout
+            #define XDEBUG_STD_OUT std::cout //default std::cout
         #endif
 
         /* __THREAD__ default is std::this_thread::get_id()*/
         #ifndef __THREAD__
             #define __THREAD__ std::this_thread::get_id()
         #endif
+
         static std::mutex _mutexPrint;
         static int _thread_id = 1;
         static std::map<std::thread::id, int> _threads{{__THREAD__, 0}};
@@ -39,7 +40,8 @@
             XDEBUG_STD_OUT << "Duration in mircoseconds : " << duration.count() << std::endl; \
             return ret; \
         }()
-
+        /* Prints the type of the variable */
+        #define DEBUG_TYPE(x) XDEBUG_STD_OUT << #x << std::endl;
         /* debug print just for comments */
         #define DEBUG(...) [](const auto&...x){XDEBUG_STD_OUT << "Debug : ";((XDEBUG_STD_OUT << x),...); XDEBUG_STD_OUT << std::endl; }(__VA_ARGS__);
         /* debug print for threading purposes */
